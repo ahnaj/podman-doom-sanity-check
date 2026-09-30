@@ -1,0 +1,7 @@
+* text=auto
+*.sh text eol=lf
+*.c text eol=lf
+*.md text eol=lf
+# Patch context preserves upstream whitespace.
+*.patch text eol=lf -whitespace
+Containerfile text eol=lf

@@ -1,0 +1,23 @@
+--- a/wadread.c
++++ b/wadread.c
+@@ -244,6 +244,9 @@
+ 
+     sfx = (unsigned char *) loadlump(name, &size);
+ 
++    if (!sfx) sfx = (unsigned char *) loadlump("dspistol", &size);
++    if (!sfx || size < 8) derror("Missing or invalid sound lump");
++
+     // pad the sound effect out to the mixing buffer size
+     paddedsize = ((size-8 + (SAMPLECOUNT-1)) / SAMPLECOUNT) * SAMPLECOUNT;
+     paddedsfx = (unsigned char *) realloc(sfx, paddedsize+8);
+--- a/soundsrv.c
++++ b/soundsrv.c
+@@ -387,7 +387,7 @@
+ 	    if (longsound < lengths[i]) longsound = lengths[i];
+ 	} else {
+ 	    S_sfx[i].data = S_sfx[i].link->data;
+-	    lengths[i] = lengths[(S_sfx[i].link - S_sfx)/sizeof(sfxinfo_t)];
++	    lengths[i] = lengths[(S_sfx[i].link - S_sfx)];
+ 	}
+ 	// test only
+ 	//  {

@@ -1,0 +1,6 @@
+*
+!Containerfile
+!build.sh
+!compat.patch
+!audio.patch
+!audio.c

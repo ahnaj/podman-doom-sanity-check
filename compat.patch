@@ -1,0 +1,74 @@
+--- a/i_video.c
++++ b/i_video.c
+@@ -46,7 +46,7 @@
+ #include <sys/socket.h>
+ 
+ #include <netinet/in.h>
+-#include <errnos.h>
++#include <errno.h>
+ #include <signal.h>
+ 
+ #include "doomstat.h"
+@@ -666,7 +666,6 @@
+       id = shmget((key_t)key, size, IPC_CREAT|0777);
+       if (id==-1)
+       {
+-	extern int errno;
+ 	fprintf(stderr, "errno=%d\n", errno);
+ 	I_Error("Could not get any shared memory");
+       }
+@@ -830,6 +829,7 @@
+ 
+     // map the window
+     XMapWindow(X_display, X_mainWindow);
++    XInstallColormap(X_display, X_cmap);
+ 
+     // wait until it is OK to draw
+     oktodraw = 0;
+--- a/i_sound.c
++++ b/i_sound.c
+@@ -27,6 +27,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
++#include <errno.h>
+ 
+ #include <math.h>
+ 
+@@ -163,7 +164,6 @@
+   int*	arg )
+ {   
+     int		rc;
+-    extern int	errno;
+     
+     rc = ioctl(fd, command, arg);  
+     if (rc < 0)
+--- a/i_sound.c
++++ b/i_sound.c
+@@ -740,13 +740,8 @@
+ #ifdef SNDSERV
+   char buffer[256];
+   
+-  if (getenv("DOOMWADDIR"))
+-    sprintf(buffer, "%s/%s",
+-	    getenv("DOOMWADDIR"),
+-	    sndserver_filename);
+-  else
+-    sprintf(buffer, "%s", sndserver_filename);
+-  
++  snprintf(buffer, sizeof buffer, "/out/sndserver");
++
+   // start sound process
+   if ( !access(buffer, X_OK) )
+   {
+--- a/s_sound.c
++++ b/s_sound.c
+@@ -364,7 +364,7 @@
+   if (sfx->lumpnum < 0)
+     sfx->lumpnum = I_GetSfxLumpNum(sfx);
+ 
+-#ifndef SNDSRV
++#ifndef SNDSERV
+   // cache data if necessary
+   if (!sfx->data)
+   {
