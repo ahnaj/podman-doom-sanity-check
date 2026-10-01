@@ -4,3 +4,6 @@
 !compat.patch
 !audio.patch
 !audio.c
+!music.patch
+!music.c
+!test-music.c

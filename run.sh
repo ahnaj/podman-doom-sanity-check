@@ -6,21 +6,22 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 }
 [[ -n ${DISPLAY:-} ]] || { echo 'A desktop X11 display (or WSLg) is required.' >&2; exit 1; }
 xdpyinfo >/dev/null
-pactl info >/dev/null
+source ./audio-env.sh
 
 mkdir -p wad .run
 chmod 700 .run
 compgen -G 'wad/*.wad' >/dev/null || { echo 'No IWAD; run bash setup.sh.' >&2; exit 1; }
 
 # PulseAudio, PipeWire's PulseAudio service, and WSLg expose a Unix socket.
-pulse=${PULSE_SERVER:-unix:${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pulse/native}
-pulse=${pulse#unix:}
-[[ -S $pulse ]] || { echo "No PulseAudio Unix socket at $pulse" >&2; exit 1; }
 audio=(-e PULSE_SERVER=unix:/tmp/pulse -v "$pulse:/tmp/pulse")
 cookie=${PULSE_COOKIE:-${XDG_CONFIG_HOME:-$HOME/.config}/pulse/cookie}
+if [[ -z ${PULSE_COOKIE:-} && ! -f $cookie && -f $HOME/.pulse-cookie ]]; then
+    cookie=$HOME/.pulse-cookie
+fi
 if [[ -f $cookie ]]; then
     audio+=(-e PULSE_COOKIE=/tmp/pulse-cookie -v "$cookie:/tmp/pulse-cookie:ro")
 fi
+[[ -z ${PULSE_SINK:-} ]] || audio+=(-e "PULSE_SINK=$PULSE_SINK")
 
 session=$(mktemp -d "$PWD/.run/session.XXXXXX")
 xephyr=
@@ -53,11 +54,11 @@ done
 
 # Host networking shares the local abstract X11 socket used by WSLg.
 # No TCP listener is enabled. Host IPC is needed by the MIT-SHM renderer.
-podman run --rm --platform linux/386 --network=host --hostname "$(hostname)" \
+podman run --rm --pull=never --platform linux/386 --network=host --hostname "$(hostname)" \
     --userns=keep-id --ipc=host --security-opt label=disable \
     -e DISPLAY="$display" -e XAUTHORITY=/tmp/Xauthority "${audio[@]}" \
     -v "$session/Xauthority:/tmp/Xauthority:ro" \
     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
     -v "$PWD/out:/out:ro" -v "$PWD/wad:/wad:ro" \
     -v "$PWD/.run:/save" -e HOME=/save -w /save \
-    doom-runtime -2 "$@"
+    localhost/doom-runtime -2 "$@"

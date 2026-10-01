@@ -3,15 +3,19 @@ set -eu
 export LC_ALL=C
 
 # A failed rebuild must not leave an old executable looking successful.
-rm -f /out/linuxxdoom /out/sndserver
+rm -f /out/linuxxdoom /out/sndserver /out/test-music
 cp -R /src/linuxdoom-1.10 /tmp/doom
 cd /tmp/doom
 patch --batch --fuzz=0 -p1 < /usr/local/share/doom/compat.patch
+patch --batch --fuzz=0 -p1 < /usr/local/share/doom/music.patch
+cp /usr/local/share/doom/music.c .
 mkdir -p linux
 make -B -j1 CFLAGS='-O2 -Wall -std=gnu89 -fcommon -DNORMALUNIX -DLINUX' \
-    LDFLAGS= LIBS='-lXext -lX11 -lm'
+    LDFLAGS= LIBS='-lXext -lX11 -lm -lSDL2 -lWildMidi'
 readelf -h linux/linuxxdoom | grep 'Class:.*ELF32'
 readelf -h linux/linuxxdoom | grep 'Machine:.*Intel 80386'
+gcc -O2 -Wall -std=gnu89 -I/tmp/doom /usr/local/share/doom/test-music.c \
+    -o /out/test-music -lSDL2 -lWildMidi
 cp -R /src/sndserv /tmp/sndserv
 cd /tmp/sndserv
 sed -i 's/\r$//' *.[ch] Makefile

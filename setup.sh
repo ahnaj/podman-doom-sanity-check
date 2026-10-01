@@ -52,14 +52,14 @@ fi
     echo 'source/ has local changes; preserve them elsewhere before building.' >&2; exit 1;
 }
 mkdir -p out
-podman build --platform linux/386 --target build -t doom-build -f Containerfile .
-podman run --rm --platform linux/386 --network=none --userns=keep-id \
-    -v "$PWD/source:/src:ro,Z" -v "$PWD/out:/out:Z" doom-build
-podman build --platform linux/386 --target runtime -t doom-runtime -f Containerfile .
-for executable in linuxxdoom sndserver; do
-    podman run --rm --platform linux/386 --network=none \
+podman build --platform linux/386 --target build -t localhost/doom-build -f Containerfile .
+podman run --rm --pull=never --platform linux/386 --network=none --userns=keep-id \
+    -v "$PWD/source:/src:ro,Z" -v "$PWD/out:/out:Z" localhost/doom-build
+podman build --platform linux/386 --target runtime -t localhost/doom-runtime -f Containerfile .
+for executable in linuxxdoom sndserver test-music; do
+    podman run --rm --pull=never --platform linux/386 --network=none \
         -v "$PWD/out:/out:ro,Z" --entrypoint /lib/ld-linux.so.2 \
-        doom-runtime --list "/out/$executable"
+        localhost/doom-runtime --list "/out/$executable"
 done
 mkdir -p wad .run
 chmod 700 .run
